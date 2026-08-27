@@ -1,0 +1,16 @@
+{
+  "destinations": [
+    {
+      "type": "http",
+      "url": "https://example.com/hook",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "text/plain"
+      }
+    },
+    {
+      "type": "log",
+      "path": "./notif.log"
+    }
+  ]
+}
