@@ -1,5 +1,5 @@
 import { program } from "commander";
-import { DEFAULT_CONFIG_PATH, loadConfig } from "./config.ts";
+import { DEFAULT_CONFIG_PATH, ConfigError, loadConfig } from "./config.ts";
 import {
   destinationFromCliHttp,
   destinationFromCliLog,
@@ -87,13 +87,36 @@ export async function parseCli(argv: string[]): Promise<ParsedCli> {
   }
 
   const destinations: Destination[] = [];
+  const explicitConfig = configPath !== undefined;
+  let config: Awaited<ReturnType<typeof loadConfig>> = null;
+  let configDestinationCount = 0;
 
-  const config = await loadConfig(configPath);
-  if (config) {
-    if (destNames.length > 0) {
-      destinations.push(...destinationsFromNames(config.destinations, destNames));
+  try {
+    config = await loadConfig(configPath);
+  } catch (error) {
+    const hasCliDestinations = httpUrls.length > 0 || logPaths.length > 0;
+
+    if (!explicitConfig && hasCliDestinations && error instanceof ConfigError) {
+      console.error(`Ignoring invalid ${error.configPath}: ${error.message}`);
     } else {
-      destinations.push(...destinationsFromConfigEntries(config.destinations));
+      throw error;
+    }
+  }
+
+  if (config) {
+    const configDestinations = destNames.length > 0
+      ? destinationsFromNames(config.destinations, destNames)
+      : destinationsFromConfigEntries(config.destinations);
+
+    configDestinationCount = configDestinations.length;
+    destinations.push(...configDestinations);
+
+    if (
+      configDestinationCount === 0
+      && httpUrls.length === 0
+      && logPaths.length === 0
+    ) {
+      throw new ConfigError("Config has no destinations", configPath ?? DEFAULT_CONFIG_PATH);
     }
   } else if (configPath) {
     throw new Error(`Config file not found: ${configPath}`);

@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { parseCli } from "./cli.ts";
+import { ConfigError } from "./config.ts";
 import { dispatchAll } from "./dispatch.ts";
 import { readStdin } from "./stdin.ts";
 
@@ -10,8 +11,12 @@ async function main(): Promise<number> {
   try {
     parsed = await parseCli(process.argv);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(message);
+    if (error instanceof ConfigError) {
+      console.error(`Invalid config at ${error.configPath}: ${error.message}`);
+    } else {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(message);
+    }
     return 1;
   }
 

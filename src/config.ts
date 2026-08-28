@@ -3,6 +3,16 @@ import type { ConfigEntry, NotifConfig } from "./destinations/types.ts";
 
 const DEFAULT_CONFIG_PATH = "notif.yaml";
 
+export class ConfigError extends Error {
+  constructor(
+    message: string,
+    readonly configPath: string,
+  ) {
+    super(message);
+    this.name = "ConfigError";
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -120,16 +130,31 @@ export async function loadConfig(configPath?: string): Promise<NotifConfig | nul
     return null;
   }
 
+  const text = await file.text();
+
+  if (text.trim().length === 0) {
+    throw new ConfigError("Config file is empty", path);
+  }
+
   let raw: unknown;
 
   try {
-    raw = parseYaml(await file.text());
+    raw = parseYaml(text);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to parse config at ${path}: ${message}`);
+    throw new ConfigError(`Invalid YAML: ${message}`, path);
   }
 
-  return parseConfig(raw);
+  if (raw === null || raw === undefined) {
+    throw new ConfigError("Config file is empty", path);
+  }
+
+  try {
+    return parseConfig(raw);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new ConfigError(message, path);
+  }
 }
 
 export { DEFAULT_CONFIG_PATH };
