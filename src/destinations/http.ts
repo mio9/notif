@@ -4,6 +4,7 @@ export type HttpDestinationOptions = {
   url: string;
   method?: string;
   headers?: Record<string, string>;
+  name?: string;
 };
 
 export function createHttpDestination(options: HttpDestinationOptions): Destination {
@@ -12,7 +13,7 @@ export function createHttpDestination(options: HttpDestinationOptions): Destinat
   const url = options.url;
 
   return {
-    label: `http:${url}`,
+    label: options.name ?? `http:${url}`,
     async send(payload: string) {
       const response = await fetch(url, {
         method,

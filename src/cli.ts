@@ -4,6 +4,7 @@ import {
   destinationFromCliHttp,
   destinationFromCliLog,
   destinationsFromConfigEntries,
+  destinationsFromNames,
 } from "./destinations/factory.ts";
 import type {
   CliHttpDestination,
@@ -37,13 +38,18 @@ export async function parseCli(argv: string[]): Promise<ParsedCli> {
   let configPath: string | undefined;
   const httpUrls: string[] = [];
   const logPaths: string[] = [];
+  const destNames: string[] = [];
   let httpMethod = "POST";
   const httpHeaders: Record<string, string> = {};
 
   program
     .name("notif")
     .description("Read stdin and send payload to configured destinations")
-    .option("--config <path>", "Path to JSON config file")
+    .option("--config <path>", "Path to YAML config file")
+    .option("--dest <name>", "Use named config destination", (value, previous: string[]) => {
+      previous.push(value);
+      return previous;
+    }, [])
     .option("--http <url>", "Add HTTP destination", (value, previous: string[]) => {
       previous.push(value);
       return previous;
@@ -62,6 +68,7 @@ export async function parseCli(argv: string[]): Promise<ParsedCli> {
 
   const options = program.opts<{
     config?: string;
+    dest: string[];
     http: string[];
     log: string[];
     method: string;
@@ -69,6 +76,7 @@ export async function parseCli(argv: string[]): Promise<ParsedCli> {
   }>();
 
   configPath = options.config;
+  destNames.push(...options.dest);
   httpUrls.push(...options.http);
   logPaths.push(...options.log);
   httpMethod = options.method;
@@ -82,7 +90,11 @@ export async function parseCli(argv: string[]): Promise<ParsedCli> {
 
   const config = await loadConfig(configPath);
   if (config) {
-    destinations.push(...destinationsFromConfigEntries(config.destinations));
+    if (destNames.length > 0) {
+      destinations.push(...destinationsFromNames(config.destinations, destNames));
+    } else {
+      destinations.push(...destinationsFromConfigEntries(config.destinations));
+    }
   } else if (configPath) {
     throw new Error(`Config file not found: ${configPath}`);
   }

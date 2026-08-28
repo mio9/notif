@@ -1,0 +1,10 @@
+destinations:
+  - name: webhook
+    type: http
+    url: https://example.com/hook
+    method: POST
+    headers:
+      Content-Type: text/plain
+  - name: local-log
+    type: log
+    path: ./notif.log

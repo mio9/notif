@@ -1,9 +1,22 @@
+import { parse as parseYaml } from "yaml";
 import type { ConfigEntry, NotifConfig } from "./destinations/types.ts";
 
-const DEFAULT_CONFIG_PATH = "notif.json";
+const DEFAULT_CONFIG_PATH = "notif.yaml";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseName(value: unknown, index: number): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`destinations[${index}]: "name" must be a non-empty string`);
+  }
+
+  return value;
 }
 
 function parseHttpEntry(value: unknown, index: number): ConfigEntry {
@@ -33,6 +46,7 @@ function parseHttpEntry(value: unknown, index: number): ConfigEntry {
 
   return {
     type: "http",
+    name: parseName(value.name, index),
     url: value.url,
     method: typeof value.method === "string" ? value.method : undefined,
     headers: value.headers as Record<string, string> | undefined,
@@ -50,6 +64,7 @@ function parseLogEntry(value: unknown, index: number): ConfigEntry {
 
   return {
     type: "log",
+    name: parseName(value.name, index),
     path: value.path,
   };
 }
@@ -72,16 +87,29 @@ function parseConfigEntry(value: unknown, index: number): ConfigEntry {
 
 export function parseConfig(raw: unknown): NotifConfig {
   if (!isRecord(raw)) {
-    throw new Error("Config must be a JSON object");
+    throw new Error("Config must be a YAML object");
   }
 
   if (!Array.isArray(raw.destinations)) {
     throw new Error('Config must include a "destinations" array');
   }
 
-  return {
-    destinations: raw.destinations.map(parseConfigEntry),
-  };
+  const destinations = raw.destinations.map(parseConfigEntry);
+  const names = new Set<string>();
+
+  for (const entry of destinations) {
+    if (!entry.name) {
+      continue;
+    }
+
+    if (names.has(entry.name)) {
+      throw new Error(`Duplicate destination name "${entry.name}"`);
+    }
+
+    names.add(entry.name);
+  }
+
+  return { destinations };
 }
 
 export async function loadConfig(configPath?: string): Promise<NotifConfig | null> {
@@ -95,7 +123,7 @@ export async function loadConfig(configPath?: string): Promise<NotifConfig | nul
   let raw: unknown;
 
   try {
-    raw = await file.json();
+    raw = parseYaml(await file.text());
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to parse config at ${path}: ${message}`);

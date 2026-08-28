@@ -5,6 +5,7 @@ export type Destination = {
 
 export type HttpConfigEntry = {
   type: "http";
+  name?: string;
   url: string;
   method?: string;
   headers?: Record<string, string>;
@@ -12,6 +13,7 @@ export type HttpConfigEntry = {
 
 export type LogConfigEntry = {
   type: "log";
+  name?: string;
   path: string;
 };
 

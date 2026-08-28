@@ -2,13 +2,14 @@ import type { Destination } from "./types.ts";
 
 export type LogDestinationOptions = {
   path: string;
+  name?: string;
 };
 
 export function createLogDestination(options: LogDestinationOptions): Destination {
   const path = options.path;
 
   return {
-    label: `log:${path}`,
+    label: options.name ?? `log:${path}`,
     async send(payload: string) {
       const line = `${new Date().toISOString()} ${payload}\n`;
       const file = Bun.file(path);
