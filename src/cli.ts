@@ -1,4 +1,5 @@
 import { program } from "commander";
+import packageJson from "../package.json" with { type: "json" };
 import { DEFAULT_CONFIG_PATH, ConfigError, loadConfig } from "./config.ts";
 import {
   destinationFromCliHttp,
@@ -14,6 +15,7 @@ import type {
 
 export type ParsedCli = {
   destinations: Destination[];
+  message?: string;
   showHelp: boolean;
 };
 
@@ -45,6 +47,8 @@ export async function parseCli(argv: string[]): Promise<ParsedCli> {
   program
     .name("notif")
     .description("Read stdin and send payload to configured destinations")
+    .version(packageJson.version)
+    .option("-m, --message <text>", "Message to send instead of reading stdin")
     .option("--config <path>", "Path to YAML config file")
     .option("--dest <name>", "Use named config destination", (value, previous: string[]) => {
       previous.push(value);
@@ -67,6 +71,7 @@ export async function parseCli(argv: string[]): Promise<ParsedCli> {
   program.parse(argv.length > 0 ? argv : process.argv);
 
   const options = program.opts<{
+    message?: string;
     config?: string;
     dest: string[];
     http: string[];
@@ -141,7 +146,11 @@ export async function parseCli(argv: string[]): Promise<ParsedCli> {
     return { destinations: [], showHelp: true };
   }
 
-  return { destinations, showHelp: false };
+  return {
+    destinations,
+    message: options.message,
+    showHelp: false,
+  };
 }
 
 export { DEFAULT_CONFIG_PATH };

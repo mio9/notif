@@ -24,7 +24,7 @@ async function main(): Promise<number> {
     return 1;
   }
 
-  const payload = await readStdin();
+  const payload = parsed.message ?? await readStdin();
   const result = await dispatchAll(parsed.destinations, payload);
 
   if (result.failures.length === 0) {
@@ -38,5 +38,5 @@ async function main(): Promise<number> {
   return 1;
 }
 
-const exitCode = await main();
-process.exit(exitCode);
+
+main().then(exitCode => process.exit(exitCode));
