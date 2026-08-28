@@ -3,6 +3,9 @@
   "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "out": "bun build src/index.ts --outfile notif --compile"
+  },
   "bin": {
     "notif": "./src/index.ts"
   },
