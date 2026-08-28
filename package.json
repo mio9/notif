@@ -1,10 +1,11 @@
 {
   "name": "notif",
+  "version": "0.1.0",
   "module": "src/index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "out": "bun build src/index.ts --outfile notif --compile"
+    "out": "bun build --compile --bytecode index.ts --outfile notif "
   },
   "bin": {
     "notif": "./src/index.ts"
