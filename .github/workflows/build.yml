@@ -51,13 +51,17 @@ jobs:
         run: bun build src/index.ts --compile --target=${{ matrix.target }} --outfile notif-${{ matrix.name }}${{ matrix.ext }}
 
       - name: Package
-        run: tar -czf notif-${{ matrix.name }}.tar.gz notif-${{ matrix.name }}${{ matrix.ext }}
+        run: |
+          tar -czf notif-${{ matrix.name }}.tar.gz notif-${{ matrix.name }}${{ matrix.ext }}
+          sha256sum notif-${{ matrix.name }}.tar.gz > notif-${{ matrix.name }}.tar.gz.sha256
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: notif-${{ matrix.name }}
-          path: notif-${{ matrix.name }}.tar.gz
+          path: |
+            notif-${{ matrix.name }}.tar.gz
+            notif-${{ matrix.name }}.tar.gz.sha256
           if-no-files-found: error
           retention-days: 30
 
