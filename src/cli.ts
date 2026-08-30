@@ -46,7 +46,7 @@ export async function parseCli(argv: string[]): Promise<ParsedCli> {
 
   program
     .name("notif")
-    .description("Read stdin and send payload to configured destinations")
+    .description("Read stdin and send payload to configured destinations, no question asked.")
     .version(packageJson.version)
     .option("-m, --message <text>", "Message to send instead of reading stdin")
     .option("--config <path>", "Path to YAML config file")
